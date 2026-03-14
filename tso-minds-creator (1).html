@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSO Minds — AI Content Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080808;--surface:#111;--surface2:#181818;--border:#222;--red:#e63946;--red-dim:#c1121f;--white:#f5f5f0;--gray:#888;--gray2:#555;--green:#2d9e6b;--yellow:#f4a261;--blue:#48cae4;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+.auth-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;}
+.auth-screen.active{display:flex;}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:420px;}
+.auth-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;text-align:center;margin-bottom:6px;}
+.auth-logo span{color:var(--red);}
+.auth-sub{text-align:center;color:var(--gray);font-size:13px;margin-bottom:28px;}
+.auth-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:20px;}
+.auth-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:12px;transition:border-color .2s;}
+.auth-inp:focus{border-color:var(--red);}
+.auth-inp::placeholder{color:var(--gray2);}
+.auth-btn{width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;margin-top:4px;transition:all .2s;}
+.auth-btn:hover{background:var(--red-dim);}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.auth-switch{text-align:center;margin-top:16px;font-size:13px;color:var(--gray);}
+.auth-switch a{color:var(--red);cursor:pointer;font-weight:600;}
+.auth-err{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none;}
+.auth-err.show{display:block;}
+#app{display:none;}
+#app.active{display:block;}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(8,8,8,.95);backdrop-filter:blur(12px);z-index:100;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;}.logo span{color:var(--red);}
+.user-bar{display:flex;align-items:center;gap:12px;}
+.uavatar{width:34px;height:34px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.uname{font-size:13px;font-weight:600;}.uemail{font-size:11px;color:var(--gray);}
+.logout-btn{background:var(--surface);border:1px solid var(--border);color:var(--gray);padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:all .2s;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+.top-nav{display:flex;gap:4px;padding:10px 40px;border-bottom:1px solid var(--border);background:rgba(8,8,8,.8);overflow-x:auto;}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--gray);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;white-space:nowrap;transition:all .2s;}
+.tab-btn:hover{background:var(--surface);color:var(--white);}
+.tab-btn.active{background:var(--surface2);border-color:var(--border);color:var(--white);}
+.main{padding:32px 48px;max-width:1100px;margin:0 auto;}
+.panel{display:none;animation:fadeIn .3s ease;}.panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.pt{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;line-height:1;margin-bottom:6px;}.pt span{color:var(--red);}
+.ps{color:var(--gray);font-size:14px;margin-bottom:26px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:all .2s;}
+.card:hover,.card.sel{border-color:var(--red);background:rgba(230,57,70,.06);}
+.ct{font-size:14px;font-weight:600;margin-bottom:4px;}.cd{font-size:12px;color:var(--gray);line-height:1.5;}
+.sl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gray2);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.inp{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .2s;margin-bottom:14px;}
+.inp:focus{border-color:var(--red);}.inp::placeholder{color:var(--gray2);}
+.btn-r{background:var(--red);color:white;border:none;border-radius:10px;padding:13px 22px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;}
+.btn-r:hover{background:var(--red-dim);transform:translateY(-1px);}
+.btn-o{background:var(--surface);border:1px solid var(--border);color:var(--gray);padding:12px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-o:hover{color:var(--white);}
+.navb{display:flex;gap:12px;margin-top:26px;}.navb .btn-r{flex:1;text-align:center;}
+.obox{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.olbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.otext{font-size:14px;line-height:1.7;white-space:pre-wrap;}
+.cpb{background:var(--surface2);border:1px solid var(--border);color:var(--gray);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.cpb:hover{color:var(--white);}.cpb.ok{color:var(--green);border-color:var(--green);}
+.loading{display:flex;align-items:center;gap:10px;color:var(--gray);font-size:14px;padding:20px 0;}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.pb{height:2px;background:var(--border);border-radius:2px;margin-bottom:24px;}
+.pf{height:100%;background:var(--red);border-radius:2px;transition:width .4s;}
+.tt{width:100%;border-collapse:collapse;font-size:13px;}
+.tt th{background:var(--bg);color:var(--gray);padding:9px 12px;text-align:left;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;border-bottom:1px solid var(--border);}
+.tt td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tt tr:last-child td{border-bottom:none;}
+.tp{background:var(--surface2);color:var(--red);font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:4px;}
+.hwrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+.hpill{background:var(--surface2);border:1px solid var(--border);color:var(--gray);padding:4px 11px;border-radius:20px;font-size:12px;font-family:'JetBrains Mono',monospace;}
+.lgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px;}
+.lcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 18px;text-align:center;transition:all .2s;}
+.lcard:hover{border-color:var(--red);transform:translateY(-2px);}
+.licon{font-size:30px;margin-bottom:10px;}.lname{font-size:14px;font-weight:600;margin-bottom:4px;}.ldesc{font-size:11px;color:var(--gray);margin-bottom:14px;line-height:1.6;}
+.lbtn{display:inline-block;background:var(--red);color:white;border:none;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;}
+.lbtn:hover{opacity:.85;}.lbtn.gr{background:var(--green);}.lbtn.bl{background:#0077b6;}
+.wstep{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+.wstep:last-child{border-bottom:none;}
+.wnum{width:28px;height:28px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+.wtxt{font-size:13px;line-height:1.6;color:var(--gray);}.wtxt b{color:var(--white);}.wl{color:var(--red);text-decoration:none;font-weight:600;}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .2s;}
+.tcard:hover{border-color:var(--red);}
+.thead2{padding:16px 18px 12px;border-bottom:1px solid var(--border);}
+.tcat{font-size:10px;color:var(--red);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:5px;}
+.ttitle{font-size:14px;font-weight:600;margin-bottom:3px;}.ttype{font-size:11px;color:var(--gray);}
+.tbody2{padding:16px 18px;}
+.tscript{font-size:12px;color:var(--gray);line-height:1.6;white-space:pre-wrap;max-height:110px;overflow:hidden;position:relative;}
+.tscript::after{content:'';position:absolute;bottom:0;left:0;right:0;height:36px;background:linear-gradient(transparent,var(--surface));}
+.tactn{display:flex;gap:8px;margin-top:12px;}
+.tuse{background:var(--red);color:white;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+.tcopy{background:var(--surface2);border:1px solid var(--border);color:var(--gray);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;}
+.tcopy:hover{color:var(--white);}
+.prow{display:flex;gap:10px;align-items:center;margin-bottom:9px;}
+.pinp{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
+.pinp:focus{border-color:var(--red);}
+.pdel{background:transparent;border:1px solid var(--border);color:var(--gray);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;flex-shrink:0;}
+.pdel:hover{border-color:var(--red);color:var(--red);}
+.padd{background:transparent;border:1px dashed var(--border);color:var(--gray);padding:10px;border-radius:8px;cursor:pointer;font-size:13px;width:100%;margin-bottom:14px;}
+.padd:hover{border-color:var(--red);color:var(--red);}
+.fsel{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+.finp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
+.cstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.cstat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.csnum{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;}
+.cslbl{font-size:11px;color:var(--gray);margin-top:2px;}
+.calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.calnav{display:flex;gap:10px;align-items:center;}
+.calnavb{background:var(--surface);border:1px solid var(--border);color:var(--gray);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;}
+.calnavb:hover{color:var(--white);}
+.calmth{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:20px;}
+.caldlbl{text-align:center;font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;padding:5px 0;}
+.calday{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 7px;min-height:65px;cursor:pointer;}
+.calday.today{border-color:var(--red);}
+.calday.haspost{background:rgba(230,57,70,.06);}
+.caldnum{font-size:11px;font-weight:600;margin-bottom:3px;}
+.calday.today .caldnum{color:var(--red);}
+.capdot{background:var(--red);color:white;font-size:8px;padding:2px 5px;border-radius:3px;margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.calday.empty{background:transparent;border-color:transparent;cursor:default;}
+.apform{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.pitem{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;}
+.piinfo{flex:1;}.pidate{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
+.pititle{font-size:13px;font-weight:600;margin-top:2px;}.pitype{font-size:11px;color:var(--red);margin-top:2px;}
+.pstatus{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;cursor:pointer;}
+.sp{background:rgba(244,162,97,.15);color:var(--yellow);}
+.sd{background:rgba(45,158,107,.15);color:var(--green);}
+.delbtn{background:transparent;border:1px solid var(--border);color:var(--gray);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;}
+.delbtn:hover{border-color:var(--red);color:var(--red);}
+.filts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.fbtn{background:var(--surface);border:1px solid var(--border);color:var(--gray);padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;}
+.fbtn:hover,.fbtn.active{border-color:var(--red);color:var(--red);background:rgba(230,57,70,.06);}
+.moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;}
+.moverlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;position:relative;}
+.mtitle{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
+.mclose{position:absolute;top:14px;right:14px;background:var(--surface2);border:1px solid var(--border);color:var(--gray);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.mclose:hover{color:var(--white);}
+.mscript{font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--white);margin:14px 0;}
+@media(max-width:768px){.main{padding:18px;}header{padding:14px 20px;}.top-nav{padding:8px 14px;}.lgrid,.g2,.g3,.tgrid,.cstats{grid-template-columns:1fr;}.frow{grid-template-columns:1fr;}.calgrid{gap:3px;}.calday{min-height:48px;padding:5px 3px;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="auth-screen active" id="loginScreen">
+  <div class="auth-box">
+    <div class="auth-logo">TSO<span>.</span>MINDS</div>
+    <div class="auth-sub">AI Content Studio — @tso.minds</div>
+    <div class="auth-title">WELCOME BACK</div>
+    <div class="auth-err" id="loginErr"></div>
+    <input class="auth-inp" id="loginEmail" type="email" placeholder="Email address"/>
+    <input class="auth-inp" id="loginPass" type="password" placeholder="Password"/>
+    <button class="auth-btn" id="loginBtn" onclick="doLogin()">LOGIN →</button>
+    <div class="auth-switch">No account? <a onclick="showScreen('register')">Register here</a></div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="auth-screen" id="registerScreen">
+  <div class="auth-box">
+    <div class="auth-logo">TSO<span>.</span>MINDS</div>
+    <div class="auth-sub">Create your free account</div>
+    <div class="auth-title">CREATE ACCOUNT</div>
+    <div class="auth-err" id="regErr"></div>
+    <input class="auth-inp" id="regName" type="text" placeholder="Your full name"/>
+    <input class="auth-inp" id="regEmail" type="email" placeholder="Email address"/>
+    <input class="auth-inp" id="regPass" type="password" placeholder="Password (min 6 chars)"/>
+    <button class="auth-btn" id="regBtn" onclick="doRegister()">CREATE ACCOUNT →</button>
+    <div class="auth-switch">Have an account? <a onclick="showScreen('login')">Login here</a></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+<header>
+  <div class="logo">TSO<span>.</span>MINDS</div>
+  <div class="user-bar">
+    <div class="uavatar" id="hAvatar"></div>
+    <div><div class="uname" id="hName"></div><div class="uemail" id="hEmail"></div></div>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+</header>
+<div class="top-nav">
+  <button class="tab-btn active" onclick="showTab('creator')" id="t-creator">🎬 Content Creator</button>
+  <button class="tab-btn" onclick="showTab('launch')" id="t-launch">🚀 Quick Launch</button>
+  <button class="tab-btn" onclick="showTab('templates')" id="t-templates">📋 Script Templates</button>
+  <button class="tab-btn" onclick="showTab('timer')" id="t-timer">⏱ Timing Calculator</button>
+  <button class="tab-btn" onclick="showTab('calendar')" id="t-calendar">📅 Content Calendar</button>
+</div>
+<div class="main">
+
+<!-- CREATOR -->
+<div class="panel active" id="tp-creator">
+  <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">
+    <button class="fbtn active" onclick="cStep(0,this)">1. Topic</button>
+    <button class="fbtn" onclick="cStep(1,this)">2. Script Type</button>
+    <button class="fbtn" onclick="cStep(2,this)">3. AI Script</button>
+    <button class="fbtn" onclick="cStep(3,this)">4. Design</button>
+    <button class="fbtn" onclick="cStep(4,this)">5. Voice</button>
+    <button class="fbtn" onclick="cStep(5,this)">6. Export</button>
+  </div>
+  <div class="pb"><div class="pf" id="pf" style="width:16.6%"></div></div>
+  <div class="panel active" id="cs0">
+    <div class="pt">CHOOSE YOUR <span>TOPIC</span></div><div class="ps">Type your topic or click a category</div>
+    <input class="inp" id="topicInput" placeholder="e.g. Dark psychology tricks, morning routine..."/>
+    <div class="sl">OR PICK A CATEGORY</div>
+    <div class="g3">
+      <div class="card" onclick="selCat(this,'Dark Psychology')"><div style="font-size:20px;margin-bottom:5px">🖤</div><div class="ct">Dark Psychology</div><div class="cd">Mind tricks, manipulation</div></div>
+      <div class="card" onclick="selCat(this,'Morning Routine')"><div style="font-size:20px;margin-bottom:5px">🌅</div><div class="ct">Morning Routine</div><div class="cd">Habits, rituals, energy</div></div>
+      <div class="card" onclick="selCat(this,'Mindset Shift')"><div style="font-size:20px;margin-bottom:5px">🧠</div><div class="ct">Mindset Shift</div><div class="cd">Rewire your thinking</div></div>
+      <div class="card" onclick="selCat(this,'Self Awareness')"><div style="font-size:20px;margin-bottom:5px">🔍</div><div class="ct">Self Awareness</div><div class="cd">Know yourself deeply</div></div>
+      <div class="card" onclick="selCat(this,'Healing & Peace')"><div style="font-size:20px;margin-bottom:5px">🌿</div><div class="ct">Healing & Peace</div><div class="cd">Inner calm, letting go</div></div>
+      <div class="card" onclick="selCat(this,'Success Habits')"><div style="font-size:20px;margin-bottom:5px">⚡</div><div class="ct">Success Habits</div><div class="cd">Discipline, growth</div></div>
+    </div>
+    <div class="navb"><button class="btn-r" onclick="cStep(1,null)">NEXT: SCRIPT TYPE →</button></div>
+  </div>
+  <div class="panel" id="cs1">
+    <div class="pt">PICK SCRIPT <span>TYPE</span></div><div class="ps">Choose your content format</div>
+    <div class="g2">
+      <div class="card" onclick="selScript(this,'Reel Script (30 sec)')"><div style="font-size:10px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">🎬 MOST VIRAL</div><div class="ct">Reel Script — 30 sec</div><div class="cd">Hook + 3 points + CTA.</div></div>
+      <div class="card" onclick="selScript(this,'Carousel Caption')"><div style="font-size:10px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">📖 HIGH SAVES</div><div class="ct">Carousel Caption</div><div class="cd">10-slide educational content.</div></div>
+      <div class="card" onclick="selScript(this,'Quote Post Caption')"><div style="font-size:10px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">✍️ EASY TO MAKE</div><div class="ct">Quote Post</div><div class="cd">Powerful quote + caption.</div></div>
+      <div class="card" onclick="selScript(this,'Story Script')"><div style="font-size:10px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">📱 ENGAGEMENT</div><div class="ct">Story Script</div><div class="cd">Poll + question style.</div></div>
+    </div>
+    <div class="navb"><button class="btn-o" onclick="cStep(0,null)">← Back</button><button class="btn-r" onclick="genScript()">GENERATE AI SCRIPT →</button></div>
+  </div>
+  <div class="panel" id="cs2">
+    <div class="pt">YOUR AI <span>SCRIPT</span></div><div class="ps">Generated based on your topic and format</div>
+    <div id="scriptOut"></div>
+    <div class="navb"><button class="btn-o" onclick="cStep(1,null)">← Back</button><button class="btn-r" onclick="cStep(3,null)">NEXT: DESIGN →</button></div>
+  </div>
+  <div class="panel" id="cs3">
+    <div class="pt">DESIGN <span>AESTHETIC</span></div><div class="ps">Pick visual style</div>
+    <div class="g2">
+      <div class="card" onclick="selDesign(this,'Dark & Cinematic')"><div style="display:flex;gap:6px;margin-bottom:9px"><div style="width:20px;height:20px;border-radius:50%;background:#0a0a0a;border:1px solid #333"></div><div style="width:20px;height:20px;border-radius:50%;background:#e63946"></div><div style="width:20px;height:20px;border-radius:50%;background:#f5f5f0;border:1px solid #333"></div></div><div class="ct">Dark & Cinematic</div><div class="cd">Black, red, bold white. ★ Recommended</div></div>
+      <div class="card" onclick="selDesign(this,'Soft Beige Minimal')"><div style="display:flex;gap:6px;margin-bottom:9px"><div style="width:20px;height:20px;border-radius:50%;background:#f5ebe0;border:1px solid #ddd"></div><div style="width:20px;height:20px;border-radius:50%;background:#c77dff"></div><div style="width:20px;height:20px;border-radius:50%;background:#2d2d2d"></div></div><div class="ct">Soft Beige Minimal</div><div class="cd">Warm tones, elegant.</div></div>
+      <div class="card" onclick="selDesign(this,'Deep Blue Calm')"><div style="display:flex;gap:6px;margin-bottom:9px"><div style="width:20px;height:20px;border-radius:50%;background:#023e8a"></div><div style="width:20px;height:20px;border-radius:50%;background:#48cae4"></div><div style="width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid #ddd"></div></div><div class="ct">Deep Blue Calm</div><div class="cd">Navy + cyan. Mindset content.</div></div>
+      <div class="card" onclick="selDesign(this,'Forest Green Natural')"><div style="display:flex;gap:6px;margin-bottom:9px"><div style="width:20px;height:20px;border-radius:50%;background:#1b4332"></div><div style="width:20px;height:20px;border-radius:50%;background:#95d5b2"></div><div style="width:20px;height:20px;border-radius:50%;background:#f8f9fa;border:1px solid #ddd"></div></div><div class="ct">Forest Green Natural</div><div class="cd">Earthy. Best for healing.</div></div>
+    </div>
+    <div class="navb"><button class="btn-o" onclick="cStep(2,null)">← Back</button><button class="btn-r" onclick="cStep(4,null)">NEXT: VOICE →</button></div>
+  </div>
+  <div class="panel" id="cs4">
+    <div class="pt">VOICE & <span>AUDIO</span></div><div class="ps">Pick AI voice + background music</div>
+    <div class="sl">AI VOICE</div>
+    <div class="g2" style="margin-bottom:18px">
+      <div class="card" onclick="selVoice(this,'Michael C. Vincent')" style="display:flex;gap:12px;align-items:center;padding:15px"><div style="font-size:24px">🎙</div><div><div class="ct">Michael C. Vincent</div><div class="cd">Deep & Suspenseful — Dark Psychology</div></div></div>
+      <div class="card" onclick="selVoice(this,'Adam')" style="display:flex;gap:12px;align-items:center;padding:15px"><div style="font-size:24px">🎤</div><div><div class="ct">Adam</div><div class="cd">Warm & Confident — Motivation</div></div></div>
+      <div class="card" onclick="selVoice(this,'Rachel')" style="display:flex;gap:12px;align-items:center;padding:15px"><div style="font-size:24px">🎵</div><div><div class="ct">Rachel</div><div class="cd">Calm & Soothing — Healing</div></div></div>
+      <div class="card" onclick="selVoice(this,'Antoni')" style="display:flex;gap:12px;align-items:center;padding:15px"><div style="font-size:24px">🔊</div><div><div class="ct">Antoni</div><div class="cd">Energetic & Bold — Success</div></div></div>
+    </div>
+    <div class="sl">BACKGROUND MUSIC</div>
+    <div class="g3">
+      <div class="card" onclick="selMusic(this,'Dark Cinematic')" style="padding:13px;text-align:center"><div style="font-size:18px;margin-bottom:3px">🌑</div><div style="font-size:12px">Dark Cinematic</div></div>
+      <div class="card" onclick="selMusic(this,'Lo-Fi Chill')" style="padding:13px;text-align:center"><div style="font-size:18px;margin-bottom:3px">☁️</div><div style="font-size:12px">Lo-Fi Chill</div></div>
+      <div class="card" onclick="selMusic(this,'Epic Motivational')" style="padding:13px;text-align:center"><div style="font-size:18px;margin-bottom:3px">⚡</div><div style="font-size:12px">Epic Motivational</div></div>
+      <div class="card" onclick="selMusic(this,'Peaceful Ambient')" style="padding:13px;text-align:center"><div style="font-size:18px;margin-bottom:3px">🌿</div><div style="font-size:12px">Peaceful Ambient</div></div>
+      <div class="card" onclick="selMusic(this,'Trap Beats')" style="padding:13px;text-align:center"><div style="font-size:18px;margin-bottom:3px">🔥</div><div style="font-size:12px">Trap Beats</div></div>
+      <div class="card" onclick="selMusic(this,'No Music')" style="padding:13px;text-align:center"><div style="font-size:18px;margin-bottom:3px">🔇</div><div style="font-size:12px">No Music</div></div>
+    </div>
+    <div class="navb"><button class="btn-o" onclick="cStep(3,null)">← Back</button><button class="btn-r" onclick="cStep(5,null)">NEXT: EXPORT →</button></div>
+  </div>
+  <div class="panel" id="cs5">
+    <div class="pt">SIZE & <span>EXPORT</span></div><div class="ps">Pick format and get your full content pack</div>
+    <div class="g3" style="margin-bottom:18px">
+      <div class="card sel" onclick="selSize(this,'9:16 Vertical','1080x1920')" style="text-align:center"><div style="display:flex;justify-content:center;margin-bottom:9px"><div style="width:26px;height:46px;border:2px solid var(--red);border-radius:3px"></div></div><div class="ct">9:16 Vertical</div><div class="cd" style="color:var(--red)">Reels • TikTok • Shorts</div></div>
+      <div class="card" onclick="selSize(this,'1:1 Square','1080x1080')" style="text-align:center"><div style="display:flex;justify-content:center;margin-bottom:9px"><div style="width:38px;height:38px;border:2px solid var(--gray2);border-radius:3px"></div></div><div class="ct">1:1 Square</div><div class="cd">Feed Posts</div></div>
+      <div class="card" onclick="selSize(this,'4:5 Portrait','1080x1350')" style="text-align:center"><div style="display:flex;justify-content:center;margin-bottom:9px"><div style="width:32px;height:40px;border:2px solid var(--gray2);border-radius:3px"></div></div><div class="ct">4:5 Portrait</div><div class="cd">Instagram Feed</div></div>
+    </div>
+    <div id="exportSum"></div>
+    <div class="navb"><button class="btn-o" onclick="cStep(4,null)">← Back</button></div>
+  </div>
+</div>
+
+<!-- QUICK LAUNCH -->
+<div class="panel" id="tp-launch">
+  <div class="pt">QUICK <span>LAUNCH</span></div><div class="ps">One-click open every tool you need</div>
+  <div class="lgrid">
+    <div class="lcard"><div class="licon">🎙</div><div class="lname">ElevenLabs</div><div class="ldesc">AI Voiceover<br>Michael C. Vincent<br>Free: 10,000 chars/month</div><a class="lbtn" href="https://elevenlabs.io/app/speech-synthesis/text-to-speech" target="_blank">Open →</a></div>
+    <div class="lcard"><div class="licon">🎬</div><div class="lname">Clipchamp</div><div class="ldesc">Video Editor<br>9:16 vertical Reels<br>100% Free</div><a class="lbtn" href="https://app.clipchamp.com/consumer/home" target="_blank">Open →</a></div>
+    <div class="lcard"><div class="licon">🎥</div><div class="lname">Pixabay Videos</div><div class="ldesc">Free stock videos<br>Search: dark smoke<br>Download 720p free</div><a class="lbtn gr" href="https://pixabay.com/videos/search/dark%20smoke/" target="_blank">Open →</a></div>
+    <div class="lcard"><div class="licon">🎵</div><div class="lname">Free Music</div><div class="ldesc">Royalty-free music<br>Dark cinematic, lo-fi<br>Safe for Instagram</div><a class="lbtn gr" href="https://pixabay.com/music/search/dark%20cinematic/" target="_blank">Open →</a></div>
+    <div class="lcard"><div class="licon">🎨</div><div class="lname">Canva</div><div class="ldesc">Quote cards & thumbnails<br>Instagram templates<br>Free plan</div><a class="lbtn bl" href="https://www.canva.com/create/instagram-posts/" target="_blank">Open →</a></div>
+    <div class="lcard"><div class="licon">📅</div><div class="lname">Meta Suite</div><div class="ldesc">Schedule posts free<br>Plan your whole week<br>Best time: 7-9 PM IST</div><a class="lbtn bl" href="https://business.facebook.com/latest/home" target="_blank">Open →</a></div>
+  </div>
+  <div class="obox">
+    <div class="wstep"><div class="wnum">1</div><div class="wtxt"><b>Script</b> — Content Creator → AI Script → Copy (2 min)</div></div>
+    <div class="wstep"><div class="wnum">2</div><div class="wtxt"><b>Voice</b> — <a class="wl" href="https://elevenlabs.io/app/speech-synthesis/text-to-speech" target="_blank">ElevenLabs</a> → Michael C. Vincent → Download MP3 (5 min)</div></div>
+    <div class="wstep"><div class="wnum">3</div><div class="wtxt"><b>Background</b> — <a class="wl" href="https://pixabay.com/videos/search/dark%20smoke/" target="_blank">Pixabay</a> → Dark smoke video 720p (3 min)</div></div>
+    <div class="wstep"><div class="wnum">4</div><div class="wtxt"><b>Edit</b> — <a class="wl" href="https://app.clipchamp.com" target="_blank">Clipchamp</a> → 9:16 → Import → Add text → Export 1080p (15 min)</div></div>
+    <div class="wstep"><div class="wnum">5</div><div class="wtxt"><b>Post</b> — Upload Reel → Caption + hashtags → <b>7-9 PM IST</b> (5 min)</div></div>
+  </div>
+  <div style="text-align:center;padding:14px;background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.2);border-radius:12px;font-size:14px;color:var(--gray)">⏱ ~30 min per Reel &nbsp;|&nbsp; 💰 <b style="color:var(--green)">₹0 FREE</b></div>
+</div>
+
+<!-- TEMPLATES -->
+<div class="panel" id="tp-templates">
+  <div class="pt">SCRIPT <span>TEMPLATES</span></div><div class="ps">8 ready-made scripts — copy, customize, post.</div>
+  <div class="filts">
+    <button class="fbtn active" onclick="filtTmpl('all',this)">All (8)</button>
+    <button class="fbtn" onclick="filtTmpl('dark',this)">🖤 Dark Psychology</button>
+    <button class="fbtn" onclick="filtTmpl('mindset',this)">🧠 Mindset</button>
+    <button class="fbtn" onclick="filtTmpl('routine',this)">🌅 Routine</button>
+    <button class="fbtn" onclick="filtTmpl('healing',this)">🌿 Healing</button>
+    <button class="fbtn" onclick="filtTmpl('success',this)">⚡ Success</button>
+  </div>
+  <div class="tgrid" id="tgrid"></div>
+</div>
+
+<!-- TIMING -->
+<div class="panel" id="tp-timer">
+  <div class="pt">TIMING <span>CALCULATOR</span></div><div class="ps">Enter points — get exact timing for every second</div>
+  <div class="g2" style="margin-bottom:14px">
+    <div><div class="sl">TOTAL LENGTH</div><select class="fsel" id="vlen" onchange="calcT()"><option value="15">15 sec (Story)</option><option value="30" selected>30 sec (Reel)</option><option value="45">45 sec</option><option value="60">60 sec</option><option value="90">90 sec</option></select></div>
+    <div><div class="sl">HOOK DURATION</div><select class="fsel" id="hookd" onchange="calcT()"><option value="3" selected>3 seconds</option><option value="5">5 seconds</option><option value="7">7 seconds</option></select></div>
+  </div>
+  <div class="sl">YOUR SCRIPT POINTS</div>
+  <div id="pointsCont">
+    <div class="prow"><input class="pinp" placeholder="Hook — e.g. Someone is manipulating you right now…" oninput="calcT()"/><button class="pdel" onclick="delPt(this)">x</button></div>
+    <div class="prow"><input class="pinp" placeholder="Point 1 — e.g. The Favor Trap" oninput="calcT()"/><button class="pdel" onclick="delPt(this)">x</button></div>
+    <div class="prow"><input class="pinp" placeholder="Point 2 — e.g. Silent Treatment" oninput="calcT()"/><button class="pdel" onclick="delPt(this)">x</button></div>
+    <div class="prow"><input class="pinp" placeholder="Point 3 — e.g. Future Faking" oninput="calcT()"/><button class="pdel" onclick="delPt(this)">x</button></div>
+    <div class="prow"><input class="pinp" placeholder="CTA — e.g. Save this." oninput="calcT()"/><button class="pdel" onclick="delPt(this)">x</button></div>
+  </div>
+  <button class="padd" onclick="addPt()">+ Add Point</button>
+  <div id="timingRes"></div>
+</div>
+
+<!-- CALENDAR -->
+<div class="panel" id="tp-calendar">
+  <div class="pt">CONTENT <span>CALENDAR</span></div><div class="ps">Plan and track all your posts</div>
+  <div class="cstats" id="cstats"></div>
+  <div class="calh">
+    <div class="calnav"><button class="calnavb" onclick="chMth(-1)">← Prev</button><div class="calmth" id="cmth"></div><button class="calnavb" onclick="chMth(1)">Next →</button></div>
+    <button class="btn-r" style="font-size:14px;padding:9px 16px" onclick="document.getElementById('apfsec').scrollIntoView({behavior:'smooth'})">+ Add Post</button>
+  </div>
+  <div class="calgrid" id="calgrid"></div>
+  <div class="apform" id="apfsec">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:14px">ADD NEW POST</div>
+    <div class="frow">
+      <div><div class="sl">DATE</div><input class="finp" type="date" id="pdate"/></div>
+      <div><div class="sl">TYPE</div><select class="fsel" id="ptype"><option>Reel</option><option>Carousel</option><option>Quote Post</option><option>Story</option></select></div>
+    </div>
+    <div class="frow">
+      <div><div class="sl">TOPIC</div><input class="finp" id="ptitle" placeholder="e.g. Dark psychology tricks"/></div>
+      <div><div class="sl">STATUS</div><select class="fsel" id="pstatus"><option value="planned">Planned</option><option value="posted">Posted</option></select></div>
+    </div>
+    <button class="btn-r" onclick="addPost()" style="width:100%;text-align:center">ADD TO CALENDAR</button>
+  </div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin:22px 0 12px">ALL POSTS</div>
+  <div id="plist"></div>
+</div>
+
+</div></div>
+
+<!-- MODAL -->
+<div class="moverlay" id="moverlay" onclick="closeMod(event)">
+  <div class="modal">
+    <button class="mclose" onclick="document.getElementById('moverlay').classList.remove('open')">x</button>
+    <div class="mtitle" id="mtitle"></div>
+    <div style="font-size:11px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:4px" id="mmeta"></div>
+    <div class="mscript" id="mscript"></div>
+    <button class="btn-r" style="width:100%;text-align:center" onclick="copyMod()">COPY FULL SCRIPT</button>
+  </div>
+</div>
+
+<script>
+const API='https://social-video-generator-04c7.up.railway.app';
+const S={topic:'',category:'',scriptType:'',design:'',voice:'',music:'',size:'9:16 Vertical',dims:'1080x1920'};
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+let posts=JSON.parse(localStorage.getItem('tso_posts')||'[]');
+
+function getToken(){return localStorage.getItem('tso_token');}
+function showScreen(s){
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('registerScreen').classList.remove('active');
+  document.getElementById('app').classList.remove('active');
+  if(s==='login')document.getElementById('loginScreen').classList.add('active');
+  else if(s==='register')document.getElementById('registerScreen').classList.add('active');
+  else{document.getElementById('app').classList.add('active');loadUser();}
+}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('show');}
+function hideErr(id){document.getElementById(id).classList.remove('show');}
+
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  hideErr('loginErr');
+  if(!email||!pass){showErr('loginErr','Please fill all fields.');return;}
+  const btn=document.getElementById('loginBtn');
+  btn.disabled=true;btn.textContent='Logging in...';
+  try{
+    const res=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const data=await res.json();
+    if(!res.ok){showErr('loginErr',data.error||'Login failed.');btn.disabled=false;btn.textContent='LOGIN →';return;}
+    localStorage.setItem('tso_token',data.token);
+    localStorage.setItem('tso_user',JSON.stringify(data.user));
+    showScreen('app');
+  }catch(e){showErr('loginErr','Cannot connect. Check internet.');}
+  btn.disabled=false;btn.textContent='LOGIN →';
+}
+
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const pass=document.getElementById('regPass').value;
+  hideErr('regErr');
+  if(!name||!email||!pass){showErr('regErr','Please fill all fields.');return;}
+  const btn=document.getElementById('regBtn');
+  btn.disabled=true;btn.textContent='Creating...';
+  try{
+    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass})});
+    const data=await res.json();
+    if(!res.ok){showErr('regErr',data.error||'Registration failed.');btn.disabled=false;btn.textContent='CREATE ACCOUNT →';return;}
+    localStorage.setItem('tso_token',data.token);
+    localStorage.setItem('tso_user',JSON.stringify(data.user));
+    showScreen('app');
+  }catch(e){showErr('regErr','Cannot connect. Check internet.');}
+  btn.disabled=false;btn.textContent='CREATE ACCOUNT →';
+}
+
+function doLogout(){localStorage.removeItem('tso_token');localStorage.removeItem('tso_user');showScreen('login');}
+
+function loadUser(){
+  const u=JSON.parse(localStorage.getItem('tso_user')||'null');
+  if(u){
+    document.getElementById('hAvatar').textContent=u.avatar||u.name[0].toUpperCase();
+    document.getElementById('hName').textContent=u.name;
+    document.getElementById('hEmail').textContent=u.email;
+  }
+}
+
+window.addEventListener('load',()=>{
+  if(getToken()&&localStorage.getItem('tso_user'))showScreen('app');
+  else showScreen('login');
+  renderTmpl('all');calcT();renderExport();
+  document.getElementById('pdate').value=new Date().toISOString().split('T')[0];
+  renderCal();
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(document.getElementById('loginScreen').classList.contains('active'))doLogin();
+    if(document.getElementById('registerScreen').classList.contains('active'))doRegister();
+  }
+});
+
+function showTab(tab){
+  document.querySelectorAll('.panel[id^="tp-"]').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tp-'+tab).classList.add('active');
+  document.getElementById('t-'+tab).classList.add('active');
+  if(tab==='calendar')renderCal();
+  if(tab==='templates')renderTmpl('all');
+  if(tab==='timer')calcT();
+}
+
+function cStep(step,btn){
+  document.querySelectorAll('[id^="cs"]').forEach(p=>p.classList.remove('active'));
+  document.getElementById('cs'+step).classList.add('active');
+  document.getElementById('pf').style.width=((step+1)/6*100).toFixed(1)+'%';
+  const btns=document.querySelectorAll('#tp-creator .fbtn');
+  btns.forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');else if(btns[step])btns[step].classList.add('active');
+  if(step===5)renderExport();
+}
+
+function selCat(el,c){document.querySelectorAll('#cs0 .card').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');S.category=c;S.topic=c;document.getElementById('topicInput').value=c;}
+function selScript(el,t){document.querySelectorAll('#cs1 .card').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');S.scriptType=t;}
+function selDesign(el,d){document.querySelectorAll('#cs3 .g2 .card').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');S.design=d;}
+function selVoice(el,v){document.querySelectorAll('#cs4 .g2 .card').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');S.voice=v;}
+function selMusic(el,m){document.querySelectorAll('#cs4 .g3 .card').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');S.music=m;}
+function selSize(el,s,d){document.querySelectorAll('#cs5 .g3 .card').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');S.size=s;S.dims=d;renderExport();}
+
+async function genScript(){
+  S.topic=document.getElementById('topicInput').value||S.category||'mindset';
+  if(!S.scriptType){alert('Please select a script type!');return;}
+  cStep(2,null);
+  const out=document.getElementById('scriptOut');
+  out.innerHTML='<div class="loading"><div class="spin"></div> Generating script...</div>';
+  const prompt='You are an expert Instagram content creator for @tso.minds.\nTopic: "'+S.topic+'" | Format: "'+S.scriptType+'"\nReturn ONLY valid JSON:\n{"hook":"hook line","script":"full script","timing":[{"time":"0:00-0:03","text":"on screen","voice":"voiceover"}],"caption":"caption with emojis","hashtags":"#tag1 #tag2"}';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    const p=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    renderScriptOut(p);
+    const token=getToken();
+    if(token)fetch(API+'/api/content/save',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({topic:S.topic,script_type:S.scriptType,script:p.script,caption:p.caption,hashtags:p.hashtags})});
+  }catch(e){renderScriptOut(fallback(S.topic));}
+}
+
+function renderScriptOut(p){
+  const out=document.getElementById('scriptOut');
+  const trows=(p.timing||[]).map(t=>'<tr><td><span class="tp">'+t.time+'</span></td><td style="font-weight:600">'+t.text+'</td><td style="color:var(--gray)">'+t.voice+'</td></tr>').join('');
+  const tags=(p.hashtags||'').split(' ').map(h=>'<span class="hpill">'+h+'</span>').join('');
+  out.innerHTML='<div class="obox"><div class="olbl">HOOK</div><div class="otext" style="font-size:17px;font-weight:600;color:var(--red)">'+p.hook+'</div></div>'
+    +'<div class="obox"><div class="olbl">FULL SCRIPT <button class="cpb" onclick="cp2(\'st\',this)">Copy</button></div><div class="otext" id="st">'+p.script+'</div></div>'
+    +'<div class="obox"><div class="olbl">TIMING GUIDE</div><table class="tt"><thead><tr><th>TIME</th><th>ON SCREEN</th><th>VOICEOVER</th></tr></thead><tbody>'+trows+'</tbody></table></div>'
+    +'<div class="obox"><div class="olbl">CAPTION <button class="cpb" onclick="cp2(\'ct\',this)">Copy</button></div><div class="otext" id="ct">'+p.caption+'</div></div>'
+    +'<div class="obox"><div class="olbl">HASHTAGS</div><div class="hwrap">'+tags+'</div></div>';
+}
+
+function fallback(topic){
+  return{hook:"They're doing it to you right now and you don't even know it.",script:"3 "+topic+" secrets.\n\nNumber 1 - The Mirror Effect.\nPeople are drawn to those who reflect their energy.\n\nNumber 2 - The Silence Trick.\nThe person who speaks less holds more power.\n\nNumber 3 - The Future Pull.\nAlways give people something to look forward to.\n\nSave this.",timing:[{time:'0:00-0:03',text:'Hook',voice:'Opening line'},{time:'0:04-0:12',text:'Point 1',voice:'Mirror Effect'},{time:'0:13-0:20',text:'Point 2',voice:'Silence Trick'},{time:'0:21-0:27',text:'Point 3',voice:'Future Pull'},{time:'0:28-0:30',text:'Save this',voice:'CTA'}],caption:"These "+topic+" principles changed everything. Save this. Which one hits hardest?",hashtags:"#"+topic.replace(/ /g,'')+" #mindset #selfawareness #tso.minds #psychologyfacts #mentalhealth #innerwork #reelsviral #instagramreels #growthmindset #darkpsychology #mindsetshift"};
+}
+
+function renderExport(){
+  const el=document.getElementById('exportSum');if(!el)return;
+  el.innerHTML='<div class="obox"><div class="olbl">YOUR CONTENT PACK</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+    +[['TOPIC',S.topic||'-'],['FORMAT',S.scriptType||'-'],['DESIGN',S.design||'-'],['VOICE',S.voice||'-'],['MUSIC',S.music||'-'],['SIZE',S.size]].map(function(kv){return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--gray);font-family:JetBrains Mono,monospace;margin-bottom:3px">'+kv[0]+'</div><div style="font-size:13px;font-weight:600">'+kv[1]+'</div></div>';}).join('')+'</div>'
+    +'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><a href="https://elevenlabs.io/app/speech-synthesis/text-to-speech" target="_blank" style="color:var(--red)">1. ElevenLabs</a> - Paste script - Michael C. Vincent - Download MP3</div>'
+    +'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><a href="https://pixabay.com/videos/search/dark%20smoke/" target="_blank" style="color:var(--red)">2. Pixabay</a> - Download dark smoke video 720p</div>'
+    +'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><a href="https://app.clipchamp.com" target="_blank" style="color:var(--red)">3. Clipchamp</a> - New - '+S.size+' - Import both - Add text - Export 1080p</div>'
+    +'<div style="padding:10px 0">4. Post on Instagram at 7-9 PM IST with caption + hashtags</div>'
+    +'</div>';
+}
+
+const TMPLS=[
+  {id:1,cat:'dark',cl:'Dark Psychology',title:'3 Mind Control Tricks',type:'Reel 30 sec',script:"Someone is manipulating you right now and you don't even know it.\n\nTrick 1 - The Favor Trap.\nThey do something small so you feel forced to give back something bigger.\n\nTrick 2 - Silent Treatment.\nThey go quiet not because they are hurt but to make YOU feel guilty.\n\nTrick 3 - Future Faking.\nThey promise you a future just to keep you loyal today.\n\nSave this.",caption:"They are not angry. They are in control.\n\nSave this before you need it.\n\nWhich trick have you experienced?",hashtags:"#darkpsychology #mindtricks #psychologyfacts #manipulation #mindsetshift #tso.minds #selfawareness #protectyourpeace #mentalhealth #reelsviral #innerwork #psychologyofmind"},
+  {id:2,cat:'dark',cl:'Dark Psychology',title:'Why People Ignore You',type:'Reel 30 sec',script:"If people keep ignoring you this is why.\n\nReason 1 - You are too available.\nWhen you respond instantly you have no perceived value.\n\nReason 2 - No boundaries.\nPeople respect those who can say no.\n\nReason 3 - You seek approval.\nStop needing validation and people start chasing you.",caption:"The hard truth nobody tells you.\n\nSave this. You will need it.\n\nWhich one are you guilty of?",hashtags:"#darkpsychology #selfrespect #boundaries #mindsetshift #tso.minds #psychology #selfawareness #mentalhealth #reelsviral #innerwork"},
+  {id:3,cat:'mindset',cl:'Mindset',title:'Your First 5 Minutes',type:'Reel 30 sec',script:"Your first 5 minutes after waking up decide your whole day.\n\nMinute 1 - Do not touch your phone.\nMinute 2 - Drink water first.\nMinute 3 - Take 5 deep breaths.\nMinute 4 - Say one thing you are grateful for.\nMinute 5 - Set your one priority today.\n\nDo this 30 days. Your life will not be the same.",caption:"Your morning is being stolen from you. Take it back.\n\nWhat is the first thing YOU do after waking up?",hashtags:"#morningroutine #mindset #morningmotivation #tso.minds #selfimprovement #5amclub #successhabits #dailyroutine #mentalhealth #growthmindset"},
+  {id:4,cat:'mindset',cl:'Mindset',title:'Stop Seeking Validation',type:'Quote Post',script:"The day you stop needing everyone's approval is the day you start living your own life.\n\nMost people spend their lives performing for an audience that is not even watching.\n\nYour life is not a performance. Stop treating it like one.",caption:"The most powerful shift you can make.\n\nWhen did you last do something just for YOU?",hashtags:"#validation #selflove #mindset #innerwork #tso.minds #selfawareness #authenticity #mentalhealth #growthmindset #personaldevelopment"},
+  {id:5,cat:'routine',cl:'Routine',title:'Night Routine for Sleep',type:'Carousel 10 slides',script:"Slide 1: Your night routine is ruining your sleep.\nSlide 2: No screens 1 hour before bed\nSlide 3: No caffeine after 2 PM\nSlide 4: Dim your lights at 9 PM\nSlide 5: Write 3 things you are grateful for\nSlide 6: Sleep at the same time every night\nSlide 7: Phone outside the bedroom\nSlide 8: Read 15 minutes before sleep\nSlide 9: 10 deep breaths in bed\nSlide 10: Save this and start tonight",caption:"The way you end your day determines tomorrow. Start with ONE change tonight.\n\nWhat is your current bedtime?",hashtags:"#nightroutine #bettersleep #sleephygiene #tso.minds #habitchange #wellness #mentalhealth #selfcare #dailyhabits #growthmindset"},
+  {id:6,cat:'healing',cl:'Healing',title:'Letting Go of the Past',type:'Quote Post',script:"Holding onto the past is like trying to drive while looking in the rear view mirror.\n\nThe past will never change.\nNo amount of thinking will fix it.\n\nEvery moment you spend in what was is stolen from what could be.\n\nYou are not your past. You are what you choose next.",caption:"Healing is not forgetting. It is choosing not to let the past live in the present.\n\nWhat is one thing you are working on letting go of?",hashtags:"#healing #lettinggo #innerpeace #tso.minds #selfhealing #mentalhealth #mindset #growthmindset #emotionalhealing #selflove"},
+  {id:7,cat:'healing',cl:'Healing',title:'Signs You Need Rest',type:'Reel 30 sec',script:"Your body is telling you to stop. Are you listening?\n\nSign 1 - Irritated for no reason.\nSign 2 - Everything feels overwhelming.\nSign 3 - Cannot concentrate.\nSign 4 - Emotionally numb.\nSign 5 - Exhausted even after sleeping.\n\nThis is not laziness. This is burnout.\n\nRest is not a reward. Rest is a requirement.",caption:"Rest is not something you earn. It is something you need.\n\nWhich sign hit you the hardest?",hashtags:"#burnout #rest #selfcare #tso.minds #mentalhealth #healing #boundaries #innerpeace #wellbeing #mindset"},
+  {id:8,cat:'success',cl:'Success',title:'Discipline Over Motivation',type:'Reel 30 sec',script:"Stop waiting to feel motivated. It will not come.\n\nMotivation is a feeling. Feelings are temporary.\nDiscipline is a system. Systems are permanent.\n\nThe most successful people do not feel motivated every day.\nThey show up anyway.\n\nResults do not care about how you feel.\n\nSave this for the days you do not feel like it.",caption:"Motivation got you started. Discipline will get you there.\n\nSave this. Read it on your lazy days.\n\nWhat habit are you building right now?",hashtags:"#discipline #motivation #success #tso.minds #mindset #growthmindset #successhabits #hardwork #personaldevelopment #goalsetting"}
+];
+
+function renderTmpl(filter){
+  const f=filter==='all'?TMPLS:TMPLS.filter(function(t){return t.cat===filter;});
+  document.getElementById('tgrid').innerHTML=f.map(function(t){return '<div class="tcard"><div class="thead2"><div class="tcat">'+t.cl+'</div><div class="ttitle">'+t.title+'</div><div class="ttype">'+t.type+'</div></div><div class="tbody2"><div class="tscript">'+t.script+'</div><div class="tactn"><button class="tuse" onclick="openTmpl('+t.id+')">View Full</button><button class="tcopy" onclick="cpText('+t.id+',this)">Copy</button></div></div></div>';}).join('');
+}
+function filtTmpl(f,btn){document.querySelectorAll('#tp-templates .fbtn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderTmpl(f);}
+function openTmpl(id){
+  var t=TMPLS.find(function(x){return x.id===id;});
+  document.getElementById('mtitle').textContent=t.title;
+  document.getElementById('mmeta').textContent=t.cl+' - '+t.type;
+  document.getElementById('mscript').innerHTML='<b style="color:var(--red)">SCRIPT:</b>\n'+t.script+'\n\n<b style="color:var(--red)">CAPTION:</b>\n'+t.caption+'\n\n<b style="color:var(--red)">HASHTAGS:</b>\n'+t.hashtags;
+  document.getElementById('moverlay').classList.add('open');
+}
+function closeMod(e){if(e.target.id==='moverlay')document.getElementById('moverlay').classList.remove('open');}
+function copyMod(){navigator.clipboard.writeText(document.getElementById('mscript').innerText).then(function(){var b=document.querySelector('.modal .btn-r');b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY FULL SCRIPT';},2000);});}
+function cpText(id,btn){var t=TMPLS.find(function(x){return x.id===id;});navigator.clipboard.writeText(t.script).then(function(){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},2000);});}
+
+function addPt(){var d=document.createElement('div');d.className='prow';d.innerHTML='<input class="pinp" placeholder="Add point..." oninput="calcT()"/><button class="pdel" onclick="delPt(this)">x</button>';document.getElementById('pointsCont').appendChild(d);calcT();}
+function delPt(btn){if(document.querySelectorAll('.prow').length>1){btn.parentElement.remove();calcT();}}
+function calcT(){
+  var total=parseInt(document.getElementById('vlen').value);
+  var hookD=parseInt(document.getElementById('hookd').value);
+  var pts=Array.from(document.querySelectorAll('.pinp')).map(function(i){return i.value.trim();}).filter(Boolean);
+  if(!pts.length){document.getElementById('timingRes').innerHTML='';return;}
+  var ctaD=4,rem=total-hookD-ctaD,midPts=Math.max(1,pts.length-2),perPt=Math.max(3,Math.floor(rem/midPts));
+  function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+  var rows='',cur=0;
+  pts.forEach(function(p,i){
+    var dur=i===0?hookD:(i===pts.length-1?ctaD:perPt);
+    var tag=i===0?'HOOK':i===pts.length-1?'CTA':'Point '+i;
+    rows+='<tr><td><span class="tp">'+fmt(cur)+'-'+fmt(Math.min(cur+dur,total))+'</span></td><td>'+tag+'</td><td style="font-weight:600">'+p+'</td><td style="color:var(--gray)">'+dur+'s</td></tr>';
+    cur+=dur;
+  });
+  document.getElementById('timingRes').innerHTML='<div class="obox"><div class="olbl">TIMING - '+total+'s TOTAL</div><table class="tt"><thead><tr><th>TIME</th><th>TYPE</th><th>CONTENT</th><th>DUR</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+function savePosts(){localStorage.setItem('tso_posts',JSON.stringify(posts));}
+function addPost(){
+  var date=document.getElementById('pdate').value,type=document.getElementById('ptype').value,title=document.getElementById('ptitle').value.trim(),status=document.getElementById('pstatus').value;
+  if(!date||!title){alert('Fill in date and title!');return;}
+  posts.push({id:Date.now(),date:date,type:type,title:title,status:status});savePosts();renderCal();
+  document.getElementById('ptitle').value='';
+}
+function delPost(id){posts=posts.filter(function(p){return p.id!==id;});savePosts();renderCal();}
+function togStatus(id){var p=posts.find(function(x){return x.id===id;});if(p){p.status=p.status==='planned'?'posted':'planned';savePosts();renderCal();}}
+function chMth(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
+function renderCal(){
+  var mths=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cmth').textContent=mths[calM]+' '+calY;
+  var first=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate(),td=new Date();
+  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var html=days.map(function(d){return '<div class="caldlbl">'+d+'</div>';}).join('');
+  for(var i=0;i<first;i++)html+='<div class="calday empty"></div>';
+  for(var d=1;d<=dim;d++){
+    var ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var dp=posts.filter(function(p){return p.date===ds;});
+    var isT=td.getDate()===d&&td.getMonth()===calM&&td.getFullYear()===calY;
+    html+='<div class="calday '+(isT?'today':'')+' '+(dp.length?'haspost':'')+'"><div class="caldnum">'+d+'</div>'+dp.map(function(p){return '<div class="capdot">'+p.type.substring(0,5)+' '+p.title.substring(0,8)+'</div>';}).join('')+'</div>';
+  }
+  document.getElementById('calgrid').innerHTML=html;
+  var total=posts.length,posted=posts.filter(function(p){return p.status==='posted';}).length,planned=posts.filter(function(p){return p.status==='planned';}).length,thisM=posts.filter(function(p){return p.date.startsWith(calY+'-'+String(calM+1).padStart(2,'0'));}).length;
+  document.getElementById('cstats').innerHTML=[['Total',total,'#e63946'],['Posted',posted,'#2d9e6b'],['Planned',planned,'#f4a261'],['This Month',thisM,'#48cae4']].map(function(x){return '<div class="cstat"><div class="csnum" style="color:'+x[2]+'">'+x[1]+'</div><div class="cslbl">'+x[0]+'</div></div>';}).join('');
+  var s=posts.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  document.getElementById('plist').innerHTML=s.length?s.map(function(p){return '<div class="pitem"><div class="piinfo"><div class="pidate">'+p.date+'</div><div class="pititle">'+p.title+'</div><div class="pitype">'+p.type+'</div></div><span class="pstatus '+(p.status==='posted'?'sd':'sp')+'" onclick="togStatus('+p.id+')">'+(p.status==='posted'?'Posted':'Planned')+'</span><button class="delbtn" onclick="delPost('+p.id+')">Delete</button></div>';}).join(''):'<div style="color:var(--gray);font-size:14px;padding:20px;text-align:center">No posts yet. Add your first post above!</div>';
+}
+
+function cp2(elId,btn){navigator.clipboard.writeText(document.getElementById(elId).innerText).then(function(){var o=btn.textContent;btn.textContent='Copied!';btn.classList.add('ok');setTimeout(function(){btn.textContent=o;btn.classList.remove('ok');},2000);});}
+document.getElementById('topicInput').addEventListener('input',function(e){S.topic=e.target.value;});
+</script>
+</body>
+</html>
